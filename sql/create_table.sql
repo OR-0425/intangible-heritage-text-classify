@@ -1,0 +1,23 @@
+CREATE DATABASE IF NOT EXISTS intangible_heritage DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE intangible_heritage;
+
+-- 用户表
+CREATE TABLE IF NOT EXISTS user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键id',
+    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+    password VARCHAR(100) NOT NULL COMMENT '密码',
+    role VARCHAR(20) DEFAULT 'user' COMMENT '角色：admin管理员 / user普通用户',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 识别历史记录表
+CREATE TABLE IF NOT EXISTS heritage_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键id',
+    user_id BIGINT NOT NULL COMMENT '所属用户id',
+    content TEXT NOT NULL COMMENT '输入的非遗文本',
+    predict_label VARCHAR(50) NOT NULL COMMENT '预测分类',
+    confidence DECIMAL(5,4) NOT NULL COMMENT '置信度',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

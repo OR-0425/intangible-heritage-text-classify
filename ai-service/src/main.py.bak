@@ -1,0 +1,52 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+import os
+from schema import PredictRequest, PredictResponse
+
+# 1. 先实例化app
+app = FastAPI(title="少数民族非遗智能文本分类服务", version="1.0")
+
+# 2. 再配置跨域中间件
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有前端地址，上线再改成你自己的前端地址
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 模型存放路径
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_dir = os.path.join(BASE_DIR, "..", "model")
+model_dir = os.path.normpath(model_dir)
+
+# 加载模型
+tokenizer = AutoTokenizer.from_pretrained(model_dir, local_files_only=True)
+model = AutoModelForSequenceClassification.from_pretrained(model_dir, local_files_only=True)
+
+# 和训练时标签顺序严格对应
+model.config.id2label = {0: "传统技艺", 1: "民俗", 2: "传统音乐", 3: "传统舞蹈"}
+model.config.label2id = {"传统技艺": 0, "民俗": 1, "传统音乐": 2, "传统舞蹈": 3}
+
+@app.post("/predict", response_model=PredictResponse)
+def predict(req: PredictRequest):
+    inputs = tokenizer(
+        req.text,
+        max_length=128,
+        truncation=True,
+        padding="max_length",
+        return_tensors="pt"
+    )
+    with torch.no_grad():
+        out = model(**inputs)
+        softmax_result = torch.softmax(out.logits, dim=-1)
+        pred_idx = torch.argmax(softmax_result, dim=-1).item()
+        confidence = softmax_result[0][pred_idx].item()
+        label = model.config.id2label[pred_idx]
+    return PredictResponse(label=label, confidence=round(confidence, 4))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)

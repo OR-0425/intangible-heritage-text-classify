@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>非遗文本分类系统</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;font-family:"Microsoft Yahei",system-ui}
+        :root{
+            --blue:#2563eb;
+            --sidebar-1:#16324f;
+            --sidebar-2:#0f2740;
+            --line:#e5eaf2;
+        }
+        body{
+            min-height:100vh;
+            background:
+                    radial-gradient(900px 500px at 10% 0%, #dbeafe 0%, transparent 60%),
+                    radial-gradient(900px 600px at 95% 10%, #d1fae5 0%, transparent 55%),
+                    radial-gradient(700px 500px at 50% 100%, #e0e7ff 0%, transparent 60%),
+                    linear-gradient(135deg,#f1f6ff 0%,#eef9f5 100%);
+            background-attachment:fixed;
+            color:#1f2937;
+        }
+
+        /* ================= 登录 / 注册 ================= */
+        .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+        .auth-card{
+            width:400px;max-width:100%;
+            background:rgba(255,255,255,.85);backdrop-filter:blur(12px);
+            border:1px solid rgba(255,255,255,.7);border-radius:18px;
+            padding:32px 28px;box-shadow:0 18px 40px rgba(31,58,95,.14);
+        }
+        .auth-card h2{font-size:20px;margin-bottom:6px}
+        .auth-card .sub{font-size:13px;color:#7b8794;margin-bottom:22px}
+        .field{margin-bottom:14px}
+        .field label{display:block;font-size:12px;color:#64748b;margin-bottom:6px}
+        .field input{
+            width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+            font-size:14px;background:#fff;outline:none;transition:.2s;
+        }
+        .field input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+        .btn-main{
+            width:100%;padding:12px;border:none;border-radius:10px;
+            background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-size:15px;
+            cursor:pointer;margin-top:6px;box-shadow:0 8px 18px rgba(37,99,235,.28);transition:.2s;
+        }
+        .btn-main:hover{transform:translateY(-1px)}
+        .switch-line{margin-top:16px;text-align:center;font-size:13px;color:#8a94a3}
+        .switch-line a{color:var(--blue);cursor:pointer;text-decoration:none;font-weight:600}
+
+        /* ================= 顶栏 ================= */
+        .topbar{
+            position:fixed;top:0;left:0;right:0;height:60px;z-index:20;
+            display:flex;align-items:center;justify-content:space-between;padding:0 24px;
+            background:rgba(255,255,255,.82);backdrop-filter:blur(14px);
+            border-bottom:1px solid var(--line);
+        }
+        .brand{display:flex;align-items:center;gap:10px}
+        .brand .mark{
+            width:30px;height:30px;border-radius:9px;
+            background:linear-gradient(135deg,#3b82f6,#0ea5e9);
+            display:flex;align-items:center;justify-content:center;
+            color:#fff;font-size:14px;font-weight:700;
+        }
+        .brand .name{font-size:16px;font-weight:700;letter-spacing:.5px}
+        .topbar-right{display:flex;align-items:center;gap:14px}
+        .user-chip{display:flex;align-items:center;gap:8px;font-size:13px;color:#475569}
+        .avatar{
+            width:30px;height:30px;border-radius:50%;
+            background:linear-gradient(135deg,#60a5fa,#2563eb);color:#fff;font-size:13px;
+            display:flex;align-items:center;justify-content:center;
+        }
+        .role-badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#e0f2fe;color:#0369a1}
+        .role-badge.admin{background:#fee2e2;color:#b91c1c}
+        .btn-logout{border:1px solid var(--line);background:#fff;color:#475569;padding:8px 14px;border-radius:9px;font-size:13px;cursor:pointer;transition:.2s}
+        .btn-logout:hover{border-color:#fca5a5;color:#b91c1c;background:#fff5f5}
+
+        /* ================= 侧边栏 ================= */
+        .sidebar{
+            position:fixed;top:60px;left:0;bottom:0;width:196px;z-index:15;
+            background:linear-gradient(180deg,var(--sidebar-1),var(--sidebar-2));
+            padding:18px 12px;display:flex;flex-direction:column;gap:6px;
+        }
+        .nav-title{font-size:11px;color:#7e9ab5;letter-spacing:2px;padding:4px 10px 10px}
+        .nav-item{
+            display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;
+            color:#c6d6e6;font-size:14px;cursor:pointer;border-left:3px solid transparent;transition:.18s;
+        }
+        .nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+        .nav-item.active{background:rgba(56,189,248,.16);border-left-color:#38bdf8;color:#fff;font-weight:600}
+        .nav-dot{width:6px;height:6px;border-radius:50%;background:#64748b}
+        .nav-item.active .nav-dot{background:#38bdf8;box-shadow:0 0 8px #38bdf8}
+
+        /* ================= 内容区 ================= */
+        .content{margin-left:196px;padding:84px 26px 34px}
+        .view{display:none;animation:fade .25s ease}
+        .view.active{display:block}
+        @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+        .card{
+            background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.75);
+            border-radius:16px;padding:22px;box-shadow:0 10px 26px rgba(31,58,95,.08);margin-bottom:20px;
+        }
+        .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+        .card-head h3{font-size:16px}
+        .card-head .hint{font-size:12px;color:#94a3b8}
+
+        /* ---- 概览 ---- */
+        .welcome{margin-bottom:20px}
+        .welcome h2{font-size:22px;margin-bottom:8px}
+        .welcome p{font-size:13px;color:#7b8794}
+        .overview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+        @media (max-width:1100px){.overview-grid{grid-template-columns:repeat(2,1fr)}}
+        .stat-card{
+            background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.75);
+            border-radius:16px;padding:18px 20px;box-shadow:0 10px 26px rgba(31,58,95,.08);
+        }
+        .sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+        .sc-label{font-size:13px;color:#64748b}
+        .sc-dot{width:9px;height:9px;border-radius:50%}
+        .sc-value{font-size:28px;font-weight:700;color:#0f2740;line-height:1.2}
+        .sc-sub{font-size:12px;color:#9aa7b8;margin-top:8px}
+
+        textarea{
+            width:100%;min-height:130px;padding:13px;border:1px solid var(--line);
+            border-radius:12px;font-size:14px;outline:none;resize:vertical;transition:.2s;
+        }
+        textarea:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+        .btn{width:100%;padding:12px;border:none;border-radius:11px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-size:15px;margin-top:12px;cursor:pointer;box-shadow:0 8px 18px rgba(37,99,235,.24)}
+        .btn:hover{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
+        .btn:disabled{opacity:.7;cursor:not-allowed}
+        .btn-mini{width:auto;padding:7px 14px;font-size:13px;margin:0;box-shadow:none;border-radius:9px}
+        .btn-ghost{background:#fff;color:#475569;border:1px solid var(--line);box-shadow:none}
+        .btn-ghost:hover{background:#f8fafc}
+
+        /* ---- 识别页 ---- */
+        .predict-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:stretch}
+        @media (max-width:1000px){.predict-grid{grid-template-columns:1fr}}
+        .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 2px}
+        .chip{font-size:12px;padding:6px 12px;border-radius:20px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;cursor:pointer;transition:.2s}
+        .chip:hover{background:#e0edff;border-color:#bfdbfe;color:#1d4ed8}
+        .res-empty{padding:60px 10px;text-align:center;color:#a7b3c2}
+        .res-empty .big{font-size:38px;margin-bottom:12px;opacity:.45}
+        .res-empty .tip{font-size:13px;line-height:1.9}
+        .res-body{display:none}
+        .res-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px dashed #e8eef6}
+        .res-row .lab{font-size:13px;color:#64748b}
+        .res-row .val{font-size:22px;font-weight:700;color:#0f766e}
+        .conf-wrap{margin-top:20px}
+        .conf-top{display:flex;justify-content:space-between;font-size:13px;color:#64748b;margin-bottom:9px}
+        .conf-track{height:8px;background:#eef2f7;border-radius:20px;overflow:hidden}
+        .conf-bar{height:100%;width:0;border-radius:20px;background:linear-gradient(90deg,#34d399,#10b981);transition:width .5s}
+        .conf-raw{font-size:12px;color:#94a3b8;margin-top:10px}
+        .warn-tip{
+            display:none;margin-top:14px;padding:10px 12px;border-radius:10px;font-size:12px;
+            background:#fffbeb;border:1px solid #fde68a;color:#b45309;
+        }
+        .res-actions{display:flex;gap:10px;margin-top:16px}
+
+        .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px}
+        @media (max-width:1000px){.grid{grid-template-columns:1fr}}
+
+        /* ---- 工具栏 ---- */
+        .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+        .toolbar input[type="text"],.toolbar select,input[type="date"]{
+            padding:7px 10px;border:1px solid var(--line);border-radius:9px;
+            font-size:12px;color:#475569;background:#fff;outline:none;
+        }
+        .toolbar input[type="text"]{width:180px}
+        .toolbar input[type="text"]:focus,.toolbar select:focus,input[type="date"]:focus{border-color:#93c5fd}
+        .toolbar .sep{font-size:12px;color:#cbd5e1}
+
+        table{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+        th,td{padding:10px;text-align:center;border-bottom:1px solid #f0f4f9}
+        th{background:#f8fafc;color:#475569;font-weight:600;font-size:12px}
+        tbody tr:hover{background:#fafcff}
+        .del-btn{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;padding:5px 10px;border-radius:7px;cursor:pointer;font-size:12px}
+        .del-btn:hover{background:#fecaca}
+        .view-btn{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;padding:5px 10px;border-radius:7px;cursor:pointer;font-size:12px;margin-right:6px}
+        .view-btn:hover{background:#bae6fd}
+        .empty-td{padding:26px;color:#94a3b8}
+        .tag-soft{display:inline-block;padding:2px 10px;border-radius:20px;background:#eef7ff;color:#1d4ed8;font-size:12px}
+
+        .pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:14px;font-size:12px;color:#8a94a3}
+
+        #chartPie{width:100%;height:320px}
+        #chartConf{width:100%;height:280px}
+        #chartTrend{width:100%;height:240px}
+        .stat-tip{font-size:12px;color:#94a3b8;margin-top:8px;line-height:1.9}
+
+        /* ---- 详情弹窗 ---- */
+        .mask{
+            display:none;position:fixed;inset:0;z-index:50;background:rgba(15,39,64,.45);
+            backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:20px;
+        }
+        .modal{
+            width:520px;max-width:100%;background:#fff;border-radius:16px;padding:26px;
+            box-shadow:0 24px 60px rgba(15,39,64,.3);
+        }
+        .modal h3{font-size:17px;margin-bottom:18px}
+        .modal .row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px dashed #eef2f7;font-size:13px}
+        .modal .row .k{color:#64748b}
+        .modal .row .v{color:#0f2740;font-weight:600;max-width:70%;text-align:right;word-break:break-all}
+        .modal .full{margin-top:14px;font-size:13px;color:#475569;line-height:1.9;background:#f8fafc;border-radius:10px;padding:13px}
+        .modal-foot{margin-top:18px;text-align:right}
+
+        @media (max-width:760px){
+            .sidebar{position:static;width:auto;margin-top:60px;flex-direction:row;overflow-x:auto;padding:10px}
+            .nav-title{display:none}
+            .nav-item{white-space:nowrap}
+            .content{margin-left:0;padding:18px}
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+
+<!-- ========== 登录/注册 ========== -->
+<div id="authWrap" class="auth-wrap">
+    <div id="loginBox" class="auth-card">
+        <h2>欢迎回来</h2>
+        <p class="sub">非遗文本分类系统 · 登录</p>
+        <div class="field">
+            <label>用户名</label>
+            <input type="text" id="username" placeholder="请输入用户名">
+        </div>
+        <div class="field">
+            <label>密码</label>
+            <input type="password" id="password" placeholder="请输入密码">
+        </div>
+        <button class="btn-main" onclick="login()">登 录</button>
+        <p class="switch-line">没有账号？<a onclick="showRegister()">立即注册</a></p>
+    </div>
+
+    <div id="registerBox" class="auth-card" style="display:none">
+        <h2>创建账号</h2>
+        <p class="sub">注册后即可使用识别与历史功能</p>
+        <div class="field">
+            <label>用户名</label>
+            <input type="text" id="regUsername" placeholder="3-20 位">
+        </div>
+        <div class="field">
+            <label>密码</label>
+            <input type="password" id="regPassword" placeholder="至少 6 位">
+        </div>
+        <div class="field">
+            <label>确认密码</label>
+            <input type="password" id="regPassword2" placeholder="再输一次">
+        </div>
+        <button class="btn-main" onclick="doRegister()">注 册</button>
+        <p class="switch-line">已有账号？<a onclick="showLogin()">返回登录</a></p>
+    </div>
+</div>
+
+<!-- ========== 应用主体 ========== -->
+<div id="app" style="display:none">
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="mark">非</div>
+            <div><div class="name">非遗文本分类系统</div></div>
+        </div>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="avatar" id="avatarText">A</div>
+                <div>
+                    <div id="userName" style="line-height:1.2">admin</div>
+                    <div id="userRole" class="role-badge" style="margin-top:2px">管理员</div>
+                </div>
+            </div>
+            <button class="btn-logout" onclick="logout()">退出</button>
+        </div>
+    </header>
+
+    <aside class="sidebar">
+        <div class="nav-title">导航菜单</div>
+        <div class="nav-item active" id="nav-overview" onclick="switchView('overview')">
+            <span class="nav-dot"></span><span>数据概览</span>
+        </div>
+        <div class="nav-item" id="nav-predict" onclick="switchView('predict')">
+            <span class="nav-dot"></span><span>文本识别</span>
+        </div>
+        <div class="nav-item" id="nav-history" onclick="switchView('history')">
+            <span class="nav-dot"></span><span>识别历史</span>
+        </div>
+        <div class="nav-item" id="nav-stat" onclick="switchView('stat')">
+            <span class="nav-dot"></span><span>数据统计</span>
+        </div>
+    </aside>
+
+    <main class="content">
+
+        <!-- 视图0：数据概览 -->
+        <section id="view-overview" class="view active">
+            <div class="welcome">
+                <h2>你好，<span id="welcomeName">admin</span></h2>
+                <p id="welcomeDate"></p>
+            </div>
+
+            <div class="overview-grid">
+                <div class="stat-card">
+                    <div class="sc-top"><span class="sc-label">总识别次数</span><span class="sc-dot" style="background:#3b82f6"></span></div>
+                    <div class="sc-value" id="kTotal">0</div>
+                    <div class="sc-sub">当前账号可见的记录总数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-top"><span class="sc-label">今日识别</span><span class="sc-dot" style="background:#10b981"></span></div>
+                    <div class="sc-value" id="kToday">0</div>
+                    <div class="sc-sub">今天新增的记录数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-top"><span class="sc-label">覆盖分类</span><span class="sc-dot" style="background:#f59e0b"></span></div>
+                    <div class="sc-value" id="kCate">0</div>
+                    <div class="sc-sub">出现过的不同分类数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-top"><span class="sc-label">平均置信度</span><span class="sc-dot" style="background:#a78bfa"></span></div>
+                    <div class="sc-value" id="kAvg">0</div>
+                    <div class="sc-sub">模型对结果的把握程度</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-head"><h3>近 7 天识别趋势</h3><span class="hint">按天统计</span></div>
+                    <div id="chartTrend"></div>
+                </div>
+                <div class="card">
+                    <div class="card-head"><h3>最近活动</h3>
+                        <button class="btn btn-mini btn-ghost" onclick="switchView('history')">查看全部 →</button>
+                    </div>
+                    <table>
+                        <thead><tr><th>文本</th><th>分类</th><th>时间</th></tr></thead>
+                        <tbody id="activityBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 视图1：文本识别 -->
+        <section id="view-predict" class="view">
+            <div class="predict-grid">
+                <div class="card">
+                    <div class="card-head">
+                        <h3>文本识别</h3>
+                        <span class="hint">输入非遗名称或描述（Ctrl + Enter 快速提交）</span>
+                    </div>
+                    <textarea id="textInput" placeholder="例如：苗族银饰锻造技艺"></textarea>
+                    <div class="chips">
+                        <span class="chip" onclick="quickFill('苗族银饰锻造技艺')">苗族银饰锻造技艺</span>
+                        <span class="chip" onclick="quickFill('京剧')">京剧</span>
+                        <span class="chip" onclick="quickFill('二十四节气')">二十四节气</span>
+                        <span class="chip" onclick="quickFill('昆曲')">昆曲</span>
+                        <span class="chip" onclick="quickFill('景德镇手工制瓷技艺')">景德镇制瓷</span>
+                        <span class="chip" onclick="quickFill('端午节')">端午节</span>
+                    </div>
+                    <button class="btn" id="predictBtn" onclick="doPredict()">开始识别</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <h3>识别结果</h3>
+                        <span class="hint">模型实时返回</span>
+                    </div>
+
+                    <div class="res-empty" id="resEmpty">
+                        <div class="big">◎</div>
+                        <div class="tip">在左侧输入内容并点击「开始识别」<br>分类结果与置信度会显示在这里</div>
+                    </div>
+
+                    <div class="res-body" id="resBody">
+                        <div class="res-row">
+                            <span class="lab">分类结果</span>
+                            <span class="val" id="resLabel"></span>
+                        </div>
+                        <div class="conf-wrap">
+                            <div class="conf-top"><span>置信度</span><span id="confPct">0%</span></div>
+                            <div class="conf-track"><div class="conf-bar" id="confBar"></div></div>
+                            <div class="conf-raw">原始值：<span id="resConf"></span></div>
+                        </div>
+                        <div class="warn-tip" id="warnTip">
+                            置信度偏低，建议补充更详细的描述（如产地、工艺、场合）再识别一次。
+                        </div>
+                        <div class="res-actions">
+                            <button class="btn btn-mini btn-ghost" onclick="copyResult()">复制结果</button>
+                            <button class="btn btn-mini btn-ghost" onclick="retryPredict()">再识别一次</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <h3>我最近的识别</h3>
+                    <button class="btn btn-mini btn-ghost" onclick="switchView('history')">查看全部 →</button>
+                </div>
+                <table>
+                    <thead><tr><th>输入文本</th><th>分类</th><th>置信度</th><th>时间</th></tr></thead>
+                    <tbody id="recentTbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 视图2：识别历史 -->
+        <section id="view-history" class="view">
+            <div class="card">
+                <div class="card-head">
+                    <h3>识别历史记录</h3>
+                    <span class="hint" id="permHint"></span>
+                </div>
+
+                <div class="toolbar">
+                    <input type="text" id="searchInput" placeholder="搜索文本或分类" oninput="applyFilter()">
+                    <select id="cateSelect" onchange="applyFilter()">
+                        <option value="">全部分类</option>
+                    </select>
+                    <input type="date" id="startDate" onchange="applyFilter()">
+                    <span class="sep">~</span>
+                    <input type="date" id="endDate" onchange="applyFilter()">
+                    <select id="sortSelect" onchange="applyFilter()">
+                        <option value="timeDesc">时间：新 → 旧</option>
+                        <option value="timeAsc">时间：旧 → 新</option>
+                        <option value="confDesc">置信度：高 → 低</option>
+                    </select>
+                    <select id="pageSizeSelect" onchange="pageSize=Number(this.value);page=1;computeAndRenderHistory()">
+                        <option value="10">每页 10 条</option>
+                        <option value="20">每页 20 条</option>
+                        <option value="50">每页 50 条</option>
+                    </select>
+                    <button class="btn btn-mini" onclick="applyFilter()">筛选</button>
+                    <button class="btn btn-mini btn-ghost" onclick="resetFilter()">重置</button>
+                    <button class="btn btn-mini btn-ghost" onclick="exportCsv()">导出 CSV</button>
+                    <button class="btn btn-mini btn-ghost" onclick="loadRecord();loadStat()">刷新</button>
+                </div>
+
+                <table>
+                    <thead>
+                    <tr><th>序号</th><th>输入文本</th><th>分类</th><th>置信度</th><th>时间</th><th>操作</th></tr>
+                    </thead>
+                    <tbody id="recordTbody"></tbody>
+                </table>
+
+                <div class="pager">
+                    <span id="pageInfo">共 0 条</span>
+                    <button class="btn btn-mini btn-ghost" onclick="prevPage()">上一页</button>
+                    <button class="btn btn-mini btn-ghost" onclick="nextPage()">下一页</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 视图3：数据统计 -->
+        <section id="view-stat" class="view">
+            <div class="grid">
+                <div class="card">
+                    <div class="card-head"><h3>各类别识别数量</h3><span class="hint">按分类聚合</span></div>
+                    <div id="chartPie"></div>
+                </div>
+                <div class="card">
+                    <div class="card-head"><h3>置信度分布</h3><span class="hint">按区间统计条数</span></div>
+                    <div id="chartConf"></div>
+                </div>
+            </div>
+            <div class="card">
+                <p class="stat-tip">
+                    数据来源：识别记录表 predict_record。管理员统计全部用户记录，普通用户仅统计自己的记录。
+                    饼图取自后端 /api/record/stat 分组聚合结果，置信度分布由记录数在区间内统计得到。
+                </p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="mask" id="detailMask">
+    <div class="modal">
+        <h3>识别记录详情</h3>
+        <div class="row"><span class="k">记录 ID</span><span class="v" id="dId"></span></div>
+        <div class="row"><span class="k">分类结果</span><span class="v" id="dLabel"></span></div>
+        <div class="row"><span class="k">置信度</span><span class="v" id="dConf"></span></div>
+        <div class="row"><span class="k">识别时间</span><span class="v" id="dTime"></span></div>
+        <div class="full" id="dContent"></div>
+        <div class="modal-foot">
+            <button class="btn btn-mini btn-ghost" onclick="closeDetail()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const base = "/api";
+    let token = localStorage.getItem("token");
+    let allRecords = [];
+    let filteredRecords = [];
+    let statRows = [];
+    let page = 1;
+    let pageSize = 10;
+    const charts = {};
+
+    /* ---------- 小工具 ---------- */
+    function pad(n){ return String(n).padStart(2, "0"); }
+    function todayStr(){
+        const d = new Date();
+        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    }
+    function dateStr(t){ return (t || "").slice(0, 10); }
+    function timeStr(t){ return (t || "").replace("T", " ").slice(0, 19); }
+    function num(v){ const n = Number(v); return isNaN(n) ? 0 : n; }
+    function visible(id){ return document.getElementById(id).classList.contains("active"); }
+    function useChart(id){
+        const el = document.getElementById(id);
+        if(!el) return null;
+        if(!charts[id]){ charts[id] = echarts.init(el); }
+        else { charts[id].resize(); }
+        return charts[id];
+    }
+
+    /* ---------- 登录 / 注册 ---------- */
+    function showLogin(){
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("registerBox").style.display = "none";
+    }
+    function showRegister(){
+        document.getElementById("registerBox").style.display = "block";
+        document.getElementById("loginBox").style.display = "none";
+    }
+
+    async function login(){
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        if(!username || !password){ alert("请输入用户名和密码"); return; }
+
+        const res = await fetch(base + "/user/login",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({username,password})
+        });
+        if(res.status === 401){ alert("账号不存在或密码错误"); return; }
+        if(!res.ok){ alert("登录失败，请查看后端控制台异常信息"); return; }
+
+        const data = await res.json();
+        token = data.token;
+        localStorage.setItem("token", token);
+        localStorage.setItem("username", data.username || username);
+        localStorage.setItem("role", data.role || "");
+        showApp();
+    }
+
+    async function doRegister(){
+        const username = document.getElementById("regUsername").value.trim();
+        const password = document.getElementById("regPassword").value.trim();
+        const password2 = document.getElementById("regPassword2").value.trim();
+        if(!username || !password || !password2){ alert("请把三项填完整"); return; }
+        if(username.length < 3 || username.length > 20){ alert("用户名请填 3-20 位"); return; }
+        if(password.length < 6){ alert("密码至少 6 位"); return; }
+        if(password !== password2){ alert("两次输入的密码不一致"); return; }
+
+        const res = await fetch(base + "/user/register",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({username,password})
+        });
+        if(res.status === 409){ alert("用户名已存在，换一个"); return; }
+        if(res.status === 400){ alert("用户名或密码不能为空"); return; }
+        if(!res.ok){ alert("注册失败，请查看后端控制台异常信息"); return; }
+
+        alert("注册成功，请用该账号登录");
+        document.getElementById("regUsername").value = "";
+        document.getElementById("regPassword").value = "";
+        document.getElementById("regPassword2").value = "";
+        document.getElementById("username").value = username;
+        document.getElementById("password").value = "";
+        showLogin();
+    }
+
+    /* ---------- 主界面 ---------- */
+    function showApp(){
+        document.getElementById("authWrap").style.display = "none";
+        document.getElementById("app").style.display = "block";
+
+        const name = localStorage.getItem("username") || "";
+        const role = localStorage.getItem("role") || "";
+        document.getElementById("userName").innerText = name;
+        document.getElementById("avatarText").innerText = name ? name.charAt(0).toUpperCase() : "U";
+        document.getElementById("welcomeName").innerText = name;
+
+        const roleEl = document.getElementById("userRole");
+        const isAdmin = role === "admin";
+        roleEl.innerText = isAdmin ? "管理员" : "普通用户";
+        roleEl.className = "role-badge" + (isAdmin ? " admin" : "");
+        document.getElementById("permHint").innerText =
+            isAdmin ? "管理员：可查看全部用户记录" : "普通用户：仅可查看自己的记录";
+
+        const d = new Date();
+        const week = ["周日","周一","周二","周三","周四","周五","周六"][d.getDay()];
+        document.getElementById("welcomeDate").innerText =
+            d.getFullYear() + " 年 " + (d.getMonth() + 1) + " 月 " + d.getDate() + " 日 · " + week;
+
+        switchView("overview");
+        switchView("overview");
+        loadRecord();
+        loadStat();
+    }
+
+    function logout(){
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        localStorage.removeItem("role");
+        token = null;
+        document.getElementById("app").style.display = "none";
+        document.getElementById("authWrap").style.display = "flex";
+        showLogin();
+    }
+
+    /* ---------- 视图切换 ---------- */
+    function switchView(name){
+        ["overview","predict","history","stat"].forEach(k => {
+            document.getElementById("view-" + k).classList.toggle("active", k === name);
+            document.getElementById("nav-" + k).classList.toggle("active", k === name);
+        });
+        if(name === "overview"){ renderOverview(); }
+        if(name === "stat"){ loadStat(); }
+        if(name === "history"){ computeAndRenderHistory(); }
+    }
+
+    /* ---------- 数据加载 ---------- */
+    async function loadRecord(){
+        const res = await fetch(base + "/record/list",{headers:{"token": token}});
+        if(res.status === 401){ alert("登录已失效"); logout(); return; }
+        if(!res.ok) return;
+
+        const body = await res.json();
+        allRecords = body.data || [];
+        buildCategoryOptions();
+        computeAndRenderHistory();
+        renderRecent();
+        renderOverview();
+    }
+
+    function buildCategoryOptions(){
+        const sel = document.getElementById("cateSelect");
+        const current = sel.value;
+        const labels = Array.from(new Set(allRecords.map(r => r.label).filter(Boolean)));
+        sel.innerHTML = '<option value="">全部分类</option>' +
+            labels.map(l => '<option value="' + l + '">' + l + '</option>').join("");
+        if(labels.includes(current)) sel.value = current;
+    }
+
+    /* ---------- 概览 ---------- */
+    function renderOverview(){
+        const total = allRecords.length;
+        const today = allRecords.filter(r => dateStr(r.createTime) === todayStr()).length;
+        const cates = new Set(allRecords.map(r => r.label).filter(Boolean)).size;
+        const avg = total ? (allRecords.reduce((s, r) => s + num(r.confidence), 0) / total) : 0;
+
+        document.getElementById("kTotal").innerText = total;
+        document.getElementById("kToday").innerText = today;
+        document.getElementById("kCate").innerText = cates;
+        document.getElementById("kAvg").innerText = (avg * 100).toFixed(1) + "%";
+
+        const tb = document.getElementById("activityBody");
+        const list = allRecords.slice(0, 5);
+        tb.innerHTML = list.length ? list.map(r => `
+            <tr>
+                <td title="${r.content || ''}">${(r.content || "").slice(0, 16)}</td>
+                <td><span class="tag-soft">${r.label || ""}</span></td>
+                <td>${timeStr(r.createTime).slice(5, 16)}</td>
+            </tr>`).join("")
+            : '<tr><td colspan="3" class="empty-td">还没有记录</td></tr>';
+
+        if(visible("view-overview")) renderTrend();
+    }
+
+    function renderTrend(){
+        const days = [];
+        for(let i = 6; i >= 0; i--){
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            days.push(d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()));
+        }
+        const counts = days.map(day => allRecords.filter(r => dateStr(r.createTime) === day).length);
+        const c = useChart("chartTrend");
+        if(!c) return;
+        c.setOption({
+            grid:{ left:38, right:18, top:18, bottom:28 },
+            tooltip:{ trigger:"axis" },
+            xAxis:{
+                type:"category",
+                data: days.map(d => d.slice(5)),
+                axisLine:{ lineStyle:{color:"#e5eaf2"} },
+                axisLabel:{ color:"#94a3b8", fontSize:11 }
+            },
+            yAxis:{
+                type:"value",
+                minInterval:1,
+                splitLine:{ lineStyle:{color:"#f1f5f9"} },
+                axisLabel:{ color:"#94a3b8", fontSize:11 }
+            },
+            series:[{
+                type:"bar",
+                barWidth:"46%",
+                itemStyle:{
+                    borderRadius:[6,6,0,0],
+                    color:new echarts.graphic.LinearGradient(0,0,0,1,[
+                        {offset:0, color:"#60a5fa"},
+                        {offset:1, color:"#2563eb"}
+                    ])
+                },
+                data: counts
+            }]
+        }, true);
+    }
+
+    /* ---------- 识别 ---------- */
+    function quickFill(t){
+        const input = document.getElementById("textInput");
+        input.value = t;
+        input.focus();
+    }
+
+    async function doPredict(){
+        const text = document.getElementById("textInput").value.trim();
+        if(!text){ alert("请输入内容"); return; }
+
+        const btn = document.getElementById("predictBtn");
+        btn.innerText = "识别中…";
+        btn.disabled = true;
+
+        try{
+            const res = await fetch(base + "/predict",{
+                method:"POST",
+                headers:{"Content-Type":"application/json", "token": token},
+                body:JSON.stringify({text})
+            });
+            if(res.status === 401){ alert("登录已失效"); logout(); return; }
+            if(!res.ok){ alert("识别失败，请确认 FastAPI 模型服务（8000 端口）已启动"); return; }
+
+            const body = await res.json();
+            if(body.code !== 200){ alert(body.msg || "识别失败"); return; }
+
+            showResult(body.data.label, body.data.confidence);
+            loadRecord();
+            loadStat();
+        }finally{
+            btn.innerText = "开始识别";
+            btn.disabled = false;
+        }
+    }
+
+    function showResult(label, conf){
+        document.getElementById("resEmpty").style.display = "none";
+        document.getElementById("resBody").style.display = "block";
+        document.getElementById("resLabel").innerText = label;
+        document.getElementById("resConf").innerText = conf;
+
+        const pct = Math.round(num(conf) * 100);
+        document.getElementById("confBar").style.width = pct + "%";
+        document.getElementById("confPct").innerText = pct + "%";
+
+        const bar = document.getElementById("confBar");
+        bar.style.background = pct >= 70
+            ? "linear-gradient(90deg,#34d399,#10b981)"
+            : (pct >= 40 ? "linear-gradient(90deg,#fbbf24,#f59e0b)" : "linear-gradient(90deg,#fb7185,#ef4444)");
+
+        document.getElementById("warnTip").style.display = num(conf) < 0.5 ? "block" : "none";
+    }
+
+    function copyResult(){
+        const label = document.getElementById("resLabel").innerText;
+        const conf = document.getElementById("resConf").innerText;
+        if(!label){ alert("还没有识别结果"); return; }
+        const txt = "分类：" + label + "，置信度：" + conf;
+        if(navigator.clipboard){
+            navigator.clipboard.writeText(txt).then(() => alert("已复制：\n" + txt));
+        }else{
+            alert(txt);
+        }
+    }
+
+    function retryPredict(){
+        document.getElementById("textInput").focus();
+    }
+
+    /* ---------- 历史记录 ---------- */
+    function computeAndRenderHistory(){
+        const kw = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+        const cate = document.getElementById("cateSelect").value;
+        const s = document.getElementById("startDate").value;
+        const e = document.getElementById("endDate").value;
+        const sort = document.getElementById("sortSelect").value;
+
+        filteredRecords = allRecords.filter(r => {
+            const c = (r.content || "").toLowerCase();
+            const l = r.label || "";
+            if(kw && !c.includes(kw) && !l.toLowerCase().includes(kw)) return false;
+            if(cate && l !== cate) return false;
+            const d = dateStr(r.createTime);
+            if(s && d < s) return false;
+            if(e && d > e) return false;
+            return true;
+        });
+
+        filteredRecords.sort((a, b) => {
+            if(sort === "timeAsc") return (a.createTime || "").localeCompare(b.createTime || "");
+            if(sort === "confDesc") return num(b.confidence) - num(a.confidence);
+            return (b.createTime || "").localeCompare(a.createTime || "");
+        });
+
+        const totalPage = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
+        if(page > totalPage) page = totalPage;
+        if(page < 1) page = 1;
+
+        const start = (page - 1) * pageSize;
+        renderHistoryTable(filteredRecords.slice(start, start + pageSize));
+
+        document.getElementById("pageInfo").innerText =
+            "共 " + filteredRecords.length + " 条 · 第 " + page + " / " + totalPage + " 页";
+    }
+
+    function renderHistoryTable(list){
+        const tb = document.getElementById("recordTbody");
+        if(!list.length){
+            tb.innerHTML = '<tr><td colspan="6" class="empty-td">没有符合条件的记录</td></tr>';
+            return;
+        }
+        tb.innerHTML = list.map((item, i) => `
+            <tr>
+                <td>${(page - 1) * pageSize + i + 1}</td>
+                <td title="${item.content || ''}">${(item.content || "").slice(0, 18)}</td>
+                <td><span class="tag-soft">${item.label || ""}</span></td>
+                <td>${item.confidence || ""}</td>
+                <td>${timeStr(item.createTime)}</td>
+                <td>
+                    <button class="view-btn" onclick="showDetail(${item.id})">详情</button>
+                    <button class="del-btn" onclick="del(${item.id})">删除</button>
+                </td>
+            </tr>`).join("");
+    }
+
+    function renderRecent(){
+        const tb = document.getElementById("recentTbody");
+        if(!tb) return;
+        const list = allRecords.slice(0, 5);
+        tb.innerHTML = list.length ? list.map(r => `
+            <tr>
+                <td title="${r.content || ''}">${(r.content || "").slice(0, 24)}</td>
+                <td><span class="tag-soft">${r.label || ""}</span></td>
+                <td>${r.confidence || ""}</td>
+                <td>${timeStr(r.createTime)}</td>
+            </tr>`).join("")
+            : '<tr><td colspan="4" class="empty-td">还没有记录，识别一次试试</td></tr>';
+    }
+
+    function applyFilter(){ page = 1; computeAndRenderHistory(); }
+
+    function resetFilter(){
+        document.getElementById("searchInput").value = "";
+        document.getElementById("cateSelect").value = "";
+        document.getElementById("startDate").value = "";
+        document.getElementById("endDate").value = "";
+        document.getElementById("sortSelect").value = "timeDesc";
+        page = 1;
+        computeAndRenderHistory();
+    }
+
+    function prevPage(){ if(page > 1){ page--; computeAndRenderHistory(); } }
+    function nextPage(){
+        const totalPage = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
+        if(page < totalPage){ page++; computeAndRenderHistory(); }
+    }
+
+    function del(id){
+        if(!confirm("确定删除这条记录？")) return;
+        fetch(base + "/record/" + id, {method:"DELETE", headers:{"token": token}})
+            .then(async res => {
+                if(res.status === 401){ alert("登录已失效"); logout(); return; }
+                const body = await res.json();
+                if(body.code !== 200){ alert(body.msg || "删除失败"); return; }
+                loadRecord();
+                loadStat();
+            });
+    }
+
+    function showDetail(id){
+        const r = allRecords.find(x => x.id === id);
+        if(!r) return;
+        document.getElementById("dId").innerText = r.id;
+        document.getElementById("dLabel").innerText = r.label || "-";
+        document.getElementById("dConf").innerText = r.confidence + "（" + Math.round(num(r.confidence) * 100) + "%）";
+        document.getElementById("dTime").innerText = timeStr(r.createTime);
+        document.getElementById("dContent").innerText = r.content || "（无内容）";
+        document.getElementById("detailMask").style.display = "flex";
+    }
+    function closeDetail(){
+        document.getElementById("detailMask").style.display = "none";
+    }
+
+    function exportCsv(){
+        if(!filteredRecords.length){ alert("当前没有可导出的记录"); return; }
+        const lines = ["内容,分类,置信度,时间"];
+        filteredRecords.forEach(r => {
+            const c = (r.content || "").replace(/"/g, '""');
+            lines.push('"' + c + '","' + (r.label || "") + '","' + num(r.confidence) + '","' + timeStr(r.createTime) + '"');
+        });
+        const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "识别记录_" + todayStr() + ".csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    }
+
+    /* ---------- 统计 ---------- */
+    async function loadStat(){
+        const res = await fetch(base + "/record/stat",{headers:{"token": token}});
+        if(res.status === 401) return;
+        if(!res.ok) return;
+        const body = await res.json();
+        statRows = body.data || [];
+        drawStat();
+    }
+
+    function drawStat(){
+        if(!visible("view-stat")) return;
+
+        const data = statRows.map(d => ({ name: d.label || "未知", value: Number(d.count) }));
+        const pie = useChart("chartPie");
+        if(pie){
+            pie.setOption({
+                color:["#60a5fa","#34d399","#fbbf24","#f472b6","#a78bfa","#22d3ee","#f87171"],
+                tooltip:{ trigger:"item", formatter:"{b}：{c} 条（{d}%）" },
+                legend:{ bottom:0, textStyle:{fontSize:12,color:"#64748b"} },
+                series:[{
+                    type:"pie",
+                    radius:["42%","68%"],
+                    center:["50%","45%"],
+                    itemStyle:{ borderRadius:8, borderColor:"#fff", borderWidth:2 },
+                    label:{ show:true, fontSize:12, color:"#475569", formatter:"{b}\n{c}" },
+                    data: data.length ? data : [{ name:"暂无统计数据", value:0 }],
+                }]
+            }, true);
+        }
+        renderConfDist();
+    }
+
+    function renderConfDist(){
+        if(!visible("view-stat")) return;
+        const labels = ["0-20%","20-40%","40-60%","60-80%","80-100%"];
+        const buckets = [0,0,0,0,0];
+        allRecords.forEach(r => {
+            const v = num(r.confidence);
+            if(v < 0.2) buckets[0]++;
+            else if(v < 0.4) buckets[1]++;
+            else if(v < 0.6) buckets[2]++;
+            else if(v < 0.8) buckets[3]++;
+            else buckets[4]++;
+        });
+
+        const c = useChart("chartConf");
+        if(!c) return;
+        c.setOption({
+            grid:{ left:52, right:18, top:18, bottom:28 },
+            tooltip:{ trigger:"axis" },
+            xAxis:{
+                type:"category",
+                data: labels,
+                axisLine:{ lineStyle:{color:"#e5eaf2"} },
+                axisLabel:{ color:"#94a3b8", fontSize:11 }
+            },
+            yAxis:{
+                type:"value",
+                minInterval:1,
+                splitLine:{ lineStyle:{color:"#f1f5f9"} },
+                axisLabel:{ color:"#94a3b8", fontSize:11 }
+            },
+            series:[{
+                type:"bar",
+                barWidth:"50%",
+                itemStyle:{
+                    borderRadius:[6,6,0,0],
+                    color:new echarts.graphic.LinearGradient(0,0,0,1,[
+                        {offset:0, color:"#fbbf24"},
+                        {offset:1, color:"#f59e0b"}
+                    ])
+                },
+                label:{ show:true, position:"top", fontSize:11, color:"#8a94a3" },
+                data: buckets
+            }]
+        }, true);
+    }
+
+    /* ---------- 全局事件 ---------- */
+    document.getElementById("textInput").addEventListener("keydown", function(ev){
+        if(ev.ctrlKey && ev.key === "Enter"){ doPredict(); }
+    });
+    document.getElementById("detailMask").addEventListener("click", function(ev){
+        if(ev.target === this){ closeDetail(); }
+    });
+    window.onresize = function(){
+        Object.keys(charts).forEach(id => { charts[id] && charts[id].resize(); });
+    };
+    window.onload = function(){ if(token){ showApp(); } };
+</script>
+</body>
+</html>

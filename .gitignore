@@ -1,0 +1,21 @@
+# Java项目忽略
+intangible-heritage-demo/target/
+intangible-heritage-demo/.idea/
+intangible-heritage-demo/*.iml
+intangible-heritage-demo/src/main/resources/application.yml
+
+# Python项目忽略 AI模型【重点！不上传训练好的模型】
+ai-service/model/
+ai-service/__pycache__/
+ai-service/*.pyc
+ai-service/.venv/
+ai-service/env/
+ai-service/model_backup_shangpin/
+
+# IDE、系统文件、压缩包
+.idea/
+.vscode/
+*.iml
+.DS_Store
+*.log
+*.zip
